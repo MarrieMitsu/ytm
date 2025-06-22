@@ -1,6 +1,8 @@
 # YTM
 
-YouTube Memories Viewer
+YouTube Memories Viewer. Simple application for browsing your YouTube history data
+
+![demo.gif](/assets/demo.gif)
 
 ## Installation
 
@@ -12,7 +14,7 @@ cargo install --git https://github.com/MarrieMitsu/ytm
 
 ## Usage
 
-First you must export your YouTube data in JSON format from [How to download your Google data](https://support.google.com/accounts/answer/3024190?hl=en)
+First you must export your YouTube data in JSON format from [How to download your Google data](https://support.google.com/accounts/answer/3024190?hl=en). There's also example history [data](./data) which you can use for quick demo
 
 Then simply run
 

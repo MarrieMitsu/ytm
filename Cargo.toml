@@ -1,7 +1,7 @@
 [package]
 name = "ytm"
 description = "Youtube Memories Viewer"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["MarrieMitsu"]
 edition = "2024"
 readme = "./README.md"

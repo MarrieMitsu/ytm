@@ -98,6 +98,16 @@
                     allowfullscreen
                 >
                 </iframe>
+                <div class="video-player-action">
+                    <button 
+                        type="button" 
+                        style="text-align: left"
+                        @click="$store.videoPlayerDialog.switchKeepPlay()" 
+                        title="Keep playing video even when modal closed"
+                    >
+                        Keep Play (<span x-text="$store.videoPlayerDialog.keep_play ? 'On' : 'Off'"></span>)
+                    </button>
+                </div>
             </div>
         </div>
     </dialog>
@@ -817,6 +827,8 @@
             // Video player dialog
             Alpine.store("videoPlayerDialog", {
                 init() {
+                    this.keep_play = localStorage.getItem("keep_play") === "true";
+
                     VIDEO_PLAYER_DIALOG_EL.addEventListener("close", () => {
                         if (YT_PLAYER) {
                             // -1 = unstarted
@@ -827,7 +839,7 @@
                             // 5 = video cued
                             const state = YT_PLAYER.getPlayerState();
 
-                            if (state == 1) {
+                            if (state == 1 && !this.keep_play) {
                                 this.auto = true;
                                 YT_PLAYER.pauseVideo();
                             }
@@ -836,6 +848,11 @@
                 },
                 id: null,
                 auto: false,
+                keep_play: false,
+                switchKeepPlay() {
+                    this.keep_play = !this.keep_play;
+                    localStorage.setItem("keep_play", this.keep_play);
+                },
                 open(id) {
                     if (YT_PLAYER) {
                         if (this.id != id) {
@@ -856,17 +873,16 @@
             // Stats dialog
             Alpine.store("statsDialog", {
                 init() {
+                    this.interval = localStorage.getItem("interval") ?? "datetime";
                     STATS_DIALOG_EL.addEventListener("close", () => {
                     });
                 },
                 title: "",
                 timeline: new TimelineChart([]), 
-                get interval() {
-                    let v = localStorage.getItem("interval");
-                    return v ?? "datetime";
-                },
+                interval: "datetime",
                 changeInterval(v) {
                     localStorage.setItem("interval", v);
+                    this.interval = v;
                     this.renderChart();
                 },
                 renderChart() {

@@ -135,16 +135,11 @@ pub struct MetadataFilter {
 impl MetadataFilter {
     /// Check if all fields are `None` to pass filtering
     pub fn skip(&self) -> bool {
-        if self.id.is_none()
+        self.id.is_none()
             && self.title.is_none()
             && self.channel_name.is_none()
             && self.from.is_none()
             && self.to.is_none()
-        {
-            true
-        } else {
-            false
-        }
     }
 }
 

@@ -91,10 +91,10 @@ async fn main() -> Result<()> {
 
     env_logger::init_from_env(env);
 
+    let config = Config::parse();
+
     let (notify_shutdown, _) = broadcast::channel(1);
     let (shutdown_complete_tx, mut shutdown_complete_rx) = mpsc::channel(1);
-
-    let config = Config::parse();
 
     log::info!("Preparing files and components...");
 
