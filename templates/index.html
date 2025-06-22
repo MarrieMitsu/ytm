@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Memories | YTM</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="stylesheet" href="style.css" type="text/css">
+    <script defer src="alpine.js"></script>
+    <script src="chart.js"></script>
+</head>
+<body x-data>
+    <!--SVG Icons -->
+    <svg xmlns="http://www.w3.org/2000/svg" style="display: none" version="2.0">
+        <!--chart-line-icon-->
+        <defs>
+            <symbol 
+                id="chart-line-icon" 
+                width="12" 
+                height="12" 
+                viewbox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            >
+                <path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/>
+            </symbol>
+        </defs>
+        <use href="#chart-line-icon">
+        
+        <!--download-icon-->
+        <defs>
+            <symbol 
+                id="download-icon" 
+                width="12" 
+                height="12" 
+                viewbox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" x2="12" y1="15" y2="3"/>
+            </symbol>
+        </defs>
+        <use href="#download-icon">
+
+        <!--pallete-icon-->
+        <defs>
+            <symbol 
+                id="pallete-icon" 
+                width="12" 
+                height="12" 
+                viewbox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            >
+                <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/>
+                <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>
+                <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>
+                <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/>
+                <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>
+            </symbol>
+        </defs>
+        <use href="#pallete-icon">
+    </svg>
+
+    <!--Modal Dialog-->
+    <dialog 
+        id="video_player_dialog" 
+        class="modal" 
+    >
+        <div class="modal-box large-modal">
+            <form method="dialog" class="modal-close-btn">
+                <button>✕</button>
+            </form>
+            <br>
+            <br>
+            <div class="video-player-box">
+                <iframe 
+                    id="yt_player"
+                    title="YouTube video player"
+                    src="https://www.youtube.com/embed/?enablejsapi=1"
+                    width="720"
+                    height="405"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                    referrerpolicy="strict-origin-when-cross-origin" 
+                    allowfullscreen
+                >
+                </iframe>
+            </div>
+        </div>
+    </dialog>
+
+    <dialog id="stats_dialog" class="modal">
+        <div class="modal-box large-modal">
+            <form method="dialog" class="modal-close-btn">
+                <button>✕</button>
+            </form>
+            <h2>Stats</h2>
+            <template x-if="$store.statsDialog.title">
+                <span x-text="$store.statsDialog.title"></span>
+            </template>
+            <br>
+            <div class="stats-dialog-box">
+                <div>
+                    <button 
+                        type="button" 
+                        style="anchor-name:--time-interval-dropdown" 
+                        popovertarget="time-interval-dropdown"
+                    >
+                        Time Interval (<span x-text="$store.statsDialog.interval"></span>)
+                    </button>
+                    <ul 
+                        id="time-interval-dropdown" 
+                        class="dropdown menu" 
+                        style="width: 160px; position-anchor:--time-interval-dropdown"
+                        popover 
+                    >
+                        <li>
+                            <button 
+                                type="button" 
+                                @click="$store.statsDialog.changeInterval('datetime')" 
+                                style="text-align: left"
+                            >
+                                Datetime
+                            </button>
+                        </li>
+                        <li>
+                            <button 
+                                type="button" 
+                                @click="$store.statsDialog.changeInterval('daily')" 
+                                style="text-align: left"
+                            >
+                                Daily
+                            </button>
+                        </li>
+                        <li>
+                            <button 
+                                type="button" 
+                                @click="$store.statsDialog.changeInterval('monthly')" 
+                                style="text-align: left"
+                            >
+                                Monthly
+                            </button>
+                        </li>
+                        <li>
+                            <button 
+                                type="button" 
+                                @click="$store.statsDialog.changeInterval('yearly')" 
+                                style="text-align: left"
+                            >
+                                Yearly
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="chart-container">
+                    <canvas id="stats_canvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </dialog>
+    
+    <dialog id="thumbnail_dialog" class="modal">
+        <div class="modal-box medium-modal">
+            <form method="dialog" class="modal-close-btn">
+                <button>✕</button>
+            </form>
+            <h2>Thumbnail</h2>
+            <br>
+            <div style="padding: 16px">
+                <ul>
+                    <template x-for="t in $store.thumbnailDialog.thumbnails">
+                        <li>
+                            <a :href="t.url" target="_blank" x-text="t.label"></a>
+                        </li>
+                    </template>
+                </ul>
+            </div>
+        </div>
+    </dialog>
+
+    <div class="navbar">
+        <h2>YouTube Memories Viewer</h2>
+        <button type="button" style="anchor-name:--theme-dropdown" popovertarget="theme-dropdown" title="Theme">
+            <svg width="12" height="12" version="2.0">
+                <use href="#pallete-icon" />
+            </svg>
+        </button>
+        <ul id="theme-dropdown" class="dropdown dropdown-end menu" popover style="width: 160px; position-anchor:--theme-dropdown" x-data>
+            <li>
+                <button @click="$store.theme.dark()" type="button" style="text-align: left">Dark</button>
+            </li>
+            <li>
+                <button @click="$store.theme.light()" type="button" style="text-align: left">Light</button>
+            </li>
+        </ul>
+    </div>
+
+    <br>
+
+    <div class="overview-box">
+        <h2>Overview</h2>
+        <br>
+        <div class="grid-col-1 sm-grid-col-2 md-grid-col-3">
+            <div class="stats">
+                <div class="stats-title">Raw Total :</div>
+                <div class="stats-value">{{ total_count_raw}}</div>
+                <div class="stats-desc">Total count of original metadata</div>
+            </div>
+            <div class="stats">
+                <div class="stats-title">Total :</div>
+                <div class="stats-value">{{ total_count }}</div>
+                <div class="stats-desc">Total count of unique metadata</div>
+            </div>
+            <div class="stats">
+                <div class="stats-title">All Time Stats :</div>
+                <div class="stats-value">
+                    <button 
+                        type="button" 
+                        @click="$store.statsDialog.open('', {{ watch_timeline|json }})" 
+                        style="text-align: left"
+                    >
+                        <svg width="12" height="12" version="2.0">
+                            <use href="#chart-line-icon" />
+                        </svg>
+                        All Time Stats
+                    </button>
+                </div>
+            </div>
+        </div>
+        <br>
+    </div>
+
+    <br>
+
+    <div class="filter-box">
+        <form @submit.prevent="submit" x-data="filter">
+            <h2>Filter</h2>
+            <br>
+            <div class="filter-body">
+                    <div class="grid-col-1 sm-grid-col-2 md-grid-col-3">
+                        <div class="form-input">
+                            <label for="id">Video ID</label>
+                            <input id ="id" type="text" name="id" x-model="field.id" placeholder="Video ID">
+                        </div>
+                        <div class="form-input">
+                            <label for="title">Title</label>
+                            <input id ="title" type="text" name="title" x-model="field.title" placeholder="Title">
+                        </div>
+                        <div class="form-input">
+                            <label for="channel_name">Channel Name</label>
+                            <input id ="channel_name" type="text" x-model="field.channel_name" placeholder="Channel Name">
+                        </div>
+                        <div class="form-input">
+                            <label for="from">From: </label>
+                            <input id ="from" type="datetime-local" name="from" x-model="field.from">
+                        </div>
+                        <div class="form-input">
+                            <label for="to">To: </label>
+                            <input id ="to" type="datetime-local" name="to" x-model="field.to">
+                        </div>
+                        <div class="form-input">
+                            <label for="order">Order</label>
+                            <select id="order" name="order" x-model="field.order">
+                                {% for o in orders %}
+                                    <option value="{{ o.0 }}">{{ o.1 }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-input">
+                            <label for="limit">Limit</label>
+                            <select id="limit" name="limit" x-model="field.limit">
+                                {% for l in page_limits %}
+                                    <option value="{{ l }}">{{ l }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+            </div>
+            <br>
+            <br>
+            <div class="filter-footer">
+                <button @click="reset" type="button">Reset</button>
+                <button type="submit">Filter</button>
+            </div>
+        </form>
+    </div>
+
+    <br>
+
+    <div class="pagination" x-data>
+        <button @click="$store.paginator.first()" type="button">&laquo;</button>
+        <button @click="$store.paginator.prev()" type="button">&lsaquo;</button>
+        <template x-for="pr in $store.paginator.pageRange">
+            <button 
+                @click="$store.paginator.goto(pr)" 
+                type="button" 
+                :class="$store.paginator.isActive(pr) && 'active'" 
+                :key="pr" 
+                x-text="pr">
+            </button>
+        </template>
+        <button @click="$store.paginator.next()" type="button">&rsaquo;</button>
+        <button @click="$store.paginator.last()" type="button">&raquo;</button>
+    </div>
+
+    <br>
+
+    {% if data.len() == 0 %}
+        <div class="video-box" style="display: flex; justify-content: center; align-items: center">
+            zero result.
+        </div>
+    {% else %}
+        <div class="grid-col-1 sm-grid-col-2 md-grid-col-3 lg-grid-col-4 video-box">
+            {% for d in data %}
+                <div class="video">
+                    <div role="button" tabindex="0" @click="$store.videoPlayerDialog.open('{{ d.id }}')" onkeydown="" class="video-image">
+                        <img 
+                            src="https://img.youtube.com/vi/{{ d.id }}/hqdefault.jpg" 
+                            alt="{{ d.id }}"
+                        >
+                    </div>
+                    <h3>{{ d.title }}</h3>
+
+                    <div class="video-content">
+                        <p>
+                            <b>Channel</b> : <a href="https://www.youtube.com/channel/{{ d.channel.id }}" target="_blank">
+                                {{ d.channel.name }}
+                            </a>
+                        </p>
+                        <p>
+                            <b>Watched At</b> : {{ d.to_datetime_local() }}</a>
+                        </p>
+                        <p>
+                            <b>Watched Count</b> : {{ d.watch_count }}</a>
+                        </p>
+                        <p>
+                            <b>Instances</b> : 
+                            <a href="https://www.youtube.com/watch?v={{ d.id }}" target="_blank">YouTube</a>, 
+                            <a href="https://music.youtube.com/watch?v={{ d.id }}" target="_blank">YouTube Music</a>, 
+                            <a href="https://yewtu.be/watch?v={{ d.id }}" target="_blank">yewtu.be</a>, 
+                            <a href="https://inv.nadeko.net/watch?v={{ d.id }}" target="_blank">inv.nadeko.net</a>
+                        </p>
+                    </div>
+
+                    <div class="video-action">
+                        <div>
+                            <button 
+                                type="button" 
+                                style="anchor-name:--action-dropdown-{{ d.id }}" 
+                                popovertarget="action-dropdown-{{ d.id }}"
+                            >
+                                Details
+                            </button>
+                            <ul 
+                                id="action-dropdown-{{ d.id }}" 
+                                class="dropdown dropdown-top menu" 
+                                style="width: 160px; position-anchor:--action-dropdown-{{ d.id }}"
+                                popover 
+                            >
+                                <li>
+                                    <button 
+                                        type="button" 
+                                        @click="$store.statsDialog.open('{{ d.title }}', {{ d.watch_timeline|json }})" 
+                                        style="text-align: left"
+                                    >
+                                        <svg width="12" height="12" version="2.0">
+                                            <use href="#chart-line-icon" />
+                                        </svg>
+                                        Stats
+                                    </button>
+                                </li>
+                                <li>
+                                    <button 
+                                        type="button" 
+                                        @click="$store.thumbnailDialog.open('{{ d.id }}')" 
+                                        style="text-align: left"
+                                    >
+                                        <svg width="12" height="12" version="2.0">
+                                            <use href="#download-icon" />
+                                        </svg>
+                                        Thumbnail
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <br>
+    
+    <div class="pagination" x-data>
+        <button @click="$store.paginator.first()" type="button">&laquo;</button>
+        <button @click="$store.paginator.prev()" type="button">&lsaquo;</button>
+        <template x-for="pr in $store.paginator.pageRange">
+            <button 
+                @click="$store.paginator.goto(pr)" 
+                type="button" 
+                :class="$store.paginator.isActive(pr) && 'active'" 
+                :key="pr" 
+                x-text="pr">
+            </button>
+        </template>
+        <button @click="$store.paginator.next()" type="button">&rsaquo;</button>
+        <button @click="$store.paginator.last()" type="button">&raquo;</button>
+    </div>
+
+    <script>
+        const WEEKDAYS_FULL = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const WEEKDAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        const MONTHS_FULL = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December",
+        ];
+        const MONTHS_SHORT = [
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+        ];
+        const TIMEZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+        const HTML_EL = document.querySelector('html');
+        const VIDEO_PLAYER_DIALOG_EL = document.getElementById("video_player_dialog");
+        const STATS_DIALOG_EL = document.getElementById("stats_dialog");
+        const STATS_CANVAS_EL = document.getElementById("stats_canvas");
+        const THUMBNAIL_DIALOG_EL = document.getElementById("thumbnail_dialog");
+        let YT_PLAYER;
+
+        const STATS_CHART = new Chart(STATS_CANVAS_EL, {
+            type: "line",
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: "",
+                        data: [],
+                    }
+                ],
+            },
+            options: {
+            },
+        }); 
+
+        // Load YouTube Iframe API
+        function loadYouTubeIframeApi() {
+            return new Promise((resolve) => {
+                const IFRAME_SRC = "/iframe_api";
+
+                if (window.YT && typeof window.YT.Player === "function") {
+                    return resolve(window.YT);
+                }
+
+                const existingScript = document.querySelector(`script[src="${IFRAME_SRC}"]`);
+                if (!existingScript) {
+                    const script = document.createElement("script");
+                    script.src = IFRAME_SRC;
+                    script.async = true;
+                    document.head.appendChild(script);
+                }
+
+                // This function will execute as soon as the iframe player API code ready
+                window.onYouTubeIframeAPIReady = () => {
+                    resolve(window.YT);
+                }
+            });
+        }
+
+        loadYouTubeIframeApi().then((YT) => {
+            YT_PLAYER = new YT.Player("yt_player", {
+                videoId: "",
+                playerVars: {
+                    "playsinline": 1,
+                },
+            });
+        });
+
+        // Generate YouTube thumbnail URLs
+        function generateThumbnails(id) {
+            const ext = "jpg";
+            const variants = [
+                "1",
+                "2",
+                "3",
+                "default",
+                "mq1",
+                "mq2",
+                "mq3",
+                "mqdefault",
+                "0",
+                "hq1",
+                "hq2",
+                "hq3",
+                "hqdefault",
+                "sd1",
+                "sd2",
+                "sd3",
+                "sddefault",
+                "hq720",
+                "maxresdefault",
+            ];
+
+            let arr = [];
+            for (const v of variants) {
+                arr.push({
+                    label: `${id} (${v})`,
+                    url: `https://img.youtube.com/vi/${id}/${v}.${ext}`,
+                });
+            }
+
+            return arr;
+        }
+
+        // Parse html datetime-local to UTC ISO string
+        function datetimeLocalToUtcISO(str) {
+            const d = new Date(str);
+            return d.toISOString();
+        }
+
+        // Parse UTC ISO string to html datetime-local
+        function utcISOToDatetimeLocal(str) {
+            const d = new Date(str);
+            const offset = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+            return offset.toISOString().slice(0, 16);
+        }
+
+        // Padding 2
+        const pad2 = n => (n < 10 ? "0" : "") + n;
+
+        // Padding 3
+        const pad3 = n => n < 10 ? "00" + n : n < 100 ? "0" + n : "" + n;
+
+        // Simple C-style strftime-like formatter
+        function strf(format) {
+            const parts = format.split(/(%[YymBdbeHIpMSAawjZ%FTDRxX])/g);
+
+            return function(date = new Date()) {
+                const Y = date.getFullYear();
+                const M = date.getMonth();
+                const D = date.getDate();
+                const h = date.getHours();
+                const m = date.getMinutes();
+                const s = date.getSeconds();
+                const w = date.getDay();
+
+                const h12 = h % 12 || 12;
+                const dayOfYear = Math.floor((date - new Date(Y, 0, 0)) / 86400000);
+
+                const tokens = {
+                    "%Y": Y,
+                    "%y": pad2(Y % 100),
+                    "%m": pad2(M + 1),
+                    "%B": MONTHS_FULL[M],
+                    "%b": MONTHS_SHORT[M],
+                    "%d": pad2(D),
+                    "%e": D,
+                    "%H": pad2(h),
+                    "%I": pad2(h12),
+                    "%p": h < 12 ? "AM" : "PM",
+                    "%M": pad2(m),
+                    "%S": pad2(s),
+                    "%A": WEEKDAYS_FULL[w],
+                    "%a": WEEKDAYS_SHORT[w],
+                    "%w": w,
+                    "%j": pad3(dayOfYear),
+                    "%Z": TIMEZONE,
+                    "%%": "%",
+                    "%F": `${Y}-${pad2(M + 1)}-${pad2(D)}`,
+                    "%T": `${pad2(h)}:${pad2(m)}:${pad2(s)}`,
+                    "%R": `${pad2(h)}:${pad2(m)}`,
+                    "%D": `${pad2(M + 1)}/${pad2(D)}/${pad2(Y % 100)}`,
+                    "%x": date.toLocaleDateString(),
+                    "%X": date.toLocaleTimeString()
+                };
+
+                return parts.map(p => tokens[p] ?? p).join("");
+            }
+        }
+        const fmtISO = strf("%F %T");
+        const fmtDate = strf("%F");
+        const fmtMonth = strf("%Y %b");
+        const fmtYear = strf("%Y");
+
+        // Deserialize query parameter string into plain javascript object
+        function deserializeURLSearchParams(str) {
+            const qp = {};
+            const params = new URLSearchParams(str);
+
+            for (const [key, value] of params.entries()) {
+                qp[key] = value;
+            }
+
+            return qp;
+        }
+
+        // QueryParameterBuilder
+        class QueryParameterBuilder {
+            #qp = {};
+
+            constructor(qp) {
+                this.#qp = qp;
+            }
+
+            get qp() {
+                return this.#qp;
+            }
+
+            get url() {
+                const params = new URLSearchParams(this.#qp);
+                return `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+            }
+
+            purge() {
+                const obj = {};
+
+                for (const [key, value] of Object.entries(this.#qp)) {
+                    if (value || typeof value === 'boolean') {
+                        obj[key] = value;
+                    }
+                }
+
+                this.#qp = obj;
+
+                return this;
+            }
+
+            merge(source) {
+                Object.assign(this.#qp, source);
+                return this;
+            }
+
+            mergeExistingKeys(source) {
+                for (const key of Object.keys(source)) {
+                    if (key in this.#qp) {
+                        this.#qp[key] = source[key];
+                    }
+                } 
+            }
+        }
+
+        /// TimelineChart
+        class TimelineChart {
+            watch_timeline = [];
+
+            constructor(watch_timeline) {
+                this.watch_timeline = watch_timeline;
+            }
+
+            utcISOToDateLocal(str) {
+                const d = new Date(str);
+                return new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+            }
+
+            build(category) {
+                const map = {};
+
+                for (const t of this.watch_timeline) {
+                    const d = this.utcISOToDateLocal(t);
+                    let label = "";
+
+                    switch (category) {
+                        case "datetime":
+                            label = fmtISO(d); 
+                            break;
+                        case "daily":
+                            label = fmtDate(d); 
+                            break;
+                        case "monthly":
+                            label = fmtMonth(d); 
+                            break;
+                        case "yearly":
+                            label = fmtYear(d); 
+                            break;
+                        default:
+                            throw new Error("Invalid category");
+                    }
+
+                    if (!map[label]) {
+                        map[label] = { label, count: 1};
+                    } else {
+                        map[label].count++
+                    }
+                }
+
+                return Object.values(map);
+            }
+        }
+
+        // AlpineJS
+        document.addEventListener('alpine:init', () => {
+            // Theme
+            Alpine.store('theme', {
+                init() {
+                    const theme = this.colorScheme;
+                    if (theme === "dark") this.dark();
+                    if (theme === "light") this.light();
+                },
+                get colorScheme() {
+                    return localStorage.getItem("color-scheme");
+                },
+                dark() {
+                    HTML_EL.style.setProperty("color-scheme", "dark");
+                    localStorage.setItem("color-scheme", "dark");
+                    STATS_CHART.options.scales.x.grid.color = "#FFFFFF20";
+                    STATS_CHART.options.scales.y.grid.color = "#FFFFFF20";
+                    STATS_CHART.update();
+                },
+                light() {
+                    HTML_EL.style.setProperty("color-scheme", "light");
+                    localStorage.setItem("color-scheme", "light");
+                    STATS_CHART.options = {};
+                    STATS_CHART.options = {};
+                    STATS_CHART.update();
+                },
+            });
+
+            // Filter
+            Alpine.data('filter', () => ({
+                init() {
+                    const qp = {{ filter|json|safe }};
+                    if (qp.from) {
+                        qp.from = utcISOToDatetimeLocal(qp.from);
+                    }
+
+                    if (qp.to) {
+                        qp.to = utcISOToDatetimeLocal(qp.to);
+                    }
+
+                    const qpBuilder = new QueryParameterBuilder(this.field); 
+                    qpBuilder.mergeExistingKeys(qp)
+                    this.field = qpBuilder.qp;
+                },
+                field: {
+                    id: '',
+                    title: '',
+                    channel_name: '',
+                    from: '',
+                    to: '',
+                    order: '',
+                    limit: '',
+                },
+                submit() {
+                    if (this.field.from) {
+                        this.field.from = datetimeLocalToUtcISO(this.field.from);
+                    }
+
+                    if (this.field.to) {
+                        this.field.to = datetimeLocalToUtcISO(this.field.to);
+                    }
+
+                    const qpBuilder = new QueryParameterBuilder(this.field); 
+                    const url = qpBuilder.purge().url;
+
+                    window.location.href = url;
+                },
+                reset() {
+                    window.location.href = '/';
+                }
+            }));
+
+            // Paginator
+            Alpine.store('paginator', {
+                pagination: {{pagination|json|safe}},
+                get pageRange() {
+                    return this.pagination.page_range;
+                },
+                isActive(num) {
+                    return num == this.pagination.current_page;
+                },
+                goto(num) {
+                    const qp = deserializeURLSearchParams(window.location.search);
+                    const qpBuilder = new QueryParameterBuilder(qp); 
+                    const url = qpBuilder.merge({page: num}).url;
+
+                    window.location.href = url;
+                },
+                first() { 
+                    const current = this.pagination.current_page;
+                    if (current != 1) {
+                        this.goto(1);
+                    }
+                },
+                last() { 
+                    const current = this.pagination.current_page;
+                    const total = this.pagination.total_page;
+                    if (current != total) {
+                        this.goto(total);
+                    }
+                },
+                next() {
+                    const next = this.pagination.next_page;
+                    if (next) {
+                        this.goto(next);
+                    }
+                },
+                prev() {
+                    const prev = this.pagination.prev_page;
+                    if (prev) {
+                        this.goto(prev);
+                    }
+                }
+            });
+
+            // Video player dialog
+            Alpine.store("videoPlayerDialog", {
+                init() {
+                    VIDEO_PLAYER_DIALOG_EL.addEventListener("close", () => {
+                        if (YT_PLAYER) {
+                            // -1 = unstarted
+                            // 0 = ended
+                            // 1 = playing
+                            // 2 = paused
+                            // 3 = buffering
+                            // 5 = video cued
+                            const state = YT_PLAYER.getPlayerState();
+
+                            if (state == 1) {
+                                this.auto = true;
+                                YT_PLAYER.pauseVideo();
+                            }
+                        }
+                    });
+                },
+                id: null,
+                auto: false,
+                open(id) {
+                    if (YT_PLAYER) {
+                        if (this.id != id) {
+                            this.id = id;
+                            YT_PLAYER.cueVideoById({ videoId: id });
+                        } else {
+                            if (this.auto) {
+                                YT_PLAYER.playVideo();
+                                this.auto = false;
+                            }
+                        }
+
+                        VIDEO_PLAYER_DIALOG_EL.showModal();
+                    }
+                }
+            });
+
+            // Stats dialog
+            Alpine.store("statsDialog", {
+                init() {
+                    STATS_DIALOG_EL.addEventListener("close", () => {
+                    });
+                },
+                title: "",
+                timeline: new TimelineChart([]), 
+                get interval() {
+                    let v = localStorage.getItem("interval");
+                    return v ?? "datetime";
+                },
+                changeInterval(v) {
+                    localStorage.setItem("interval", v);
+                    this.renderChart();
+                },
+                renderChart() {
+                    const label = `Watch by ${this.interval}`;
+                    const data = this.timeline.build(this.interval);
+
+                    STATS_CHART.data.labels = data.map(v => v.label);
+                    STATS_CHART.data.datasets[0].label = label;
+                    STATS_CHART.data.datasets[0].data = data.map(v => v.count);
+                    STATS_CHART.update();
+                    STATS_CHART.resize();
+
+                },
+                open(title, watch_timeline) {
+                    this.title = title;
+                    this.timeline = new TimelineChart(watch_timeline);
+                    this.renderChart();
+                    STATS_DIALOG_EL.showModal();
+                },
+            });
+
+            // Thumbnail dialog
+            Alpine.store("thumbnailDialog", {
+                init() {
+                    THUMBNAIL_DIALOG_EL.addEventListener("close", () => {
+                    });
+                },
+                id: null,
+                thumbnails: [],
+                open(id) {
+                    if (this.id != id) {
+                        this.id = id;
+                        this.thumbnails = generateThumbnails(id);
+                    } 
+
+                    THUMBNAIL_DIALOG_EL.showModal();
+                }
+            });
+
+        });
+
+    </script>
+</body>
+</html>
