@@ -1,5 +1,5 @@
 # Author: MarrieMitsu
-# Usage: ./genereate-dummy -Amount 1000 -SeedPath "target/path/seed.json" -OutputDir "target/path/"
+# Usage: ./genereate-example -Amount 1000 -SeedPath "target/path/seed.json" -OutputDir "target/path/"
 
 param(
     [Parameter(Mandatory=$true)]
